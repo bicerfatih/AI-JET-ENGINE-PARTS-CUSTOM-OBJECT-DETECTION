@@ -126,39 +126,32 @@
   </div>
 
   <script>
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  const resultImg = document.getElementById('result');
-  const labelsDiv = document.getElementById('labels');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const resultImg = document.getElementById('result');
+    const labelsDiv = document.getElementById('labels');
 
-  let detectionInterval = null;
-  let currentLabel = "";
-  let detectionRunning = false;
-  let currentSessionId = null;
+    let detectionInterval = null;
+    let currentLabel = "";
+    let detectionRunning = false;  // ✅ NEW: control rendering after stop
 
-  async function startCamera() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
-    } catch (err) {
-      alert('Webcam access denied!');
-      console.error(err);
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (err) {
+        alert('Webcam access denied!');
+        console.error(err);
+      }
     }
-  }
 
-  async function sendFrame(sessionId) {
-    try {
+    async function sendFrame() {
       const context = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       canvas.toBlob(async (blob) => {
-        if (!blob) {
-          console.warn("⚠️ canvas.toBlob() returned null");
-          return;
-        }
-
         const formData = new FormData();
         formData.append('image', blob, 'frame.jpg');
 
@@ -167,11 +160,6 @@
             method: 'POST',
             body: formData
           });
-
-          if (!response.ok) {
-            console.error("❌ Server error:", response.status);
-            return;
-          }
 
           const labelsHeader = response.headers.get("X-Labels");
           if (labelsHeader) {
@@ -185,53 +173,44 @@
           const imageBlob = await response.blob();
           const objectURL = URL.createObjectURL(imageBlob);
 
-          if (detectionRunning && sessionId === currentSessionId) {
+          // ✅ Only display if detection is still running
+          if (detectionRunning) {
             resultImg.src = objectURL;
             resultImg.style.display = "block";
-          } else {
-            console.log("Ignoring stale frame from old session.");
           }
 
         } catch (err) {
           console.error('Detection failed:', err);
         }
       }, 'image/jpeg');
-
-    } catch (err) {
-      console.error("Error in sendFrame:", err);
     }
-  }
 
-  function startDetection() {
-    if (!detectionInterval) {
-      console.log("🟢 Starting detection...");
-      detectionRunning = true;
-      currentSessionId = Date.now();
-      detectionInterval = setInterval(() => sendFrame(currentSessionId), 1000);
+    function startDetection() {
+      if (!detectionInterval) {
+        detectionRunning = true;
+        detectionInterval = setInterval(sendFrame, 1000); // every 1 second
+      }
     }
-  }
 
-  function stopDetection() {
-    console.log("🔴 Stopping detection...");
-    clearInterval(detectionInterval);
-    detectionInterval = null;
-    detectionRunning = false;
-    currentSessionId = null;
-    resultImg.style.display = "none";
-    labelsDiv.innerText = "Detection Stopped";
-    currentLabel = "";
-  }
-
-  function copyLabels() {
-    if (currentLabel) {
-      navigator.clipboard.writeText(currentLabel)
-        .then(() => alert("Copied: " + currentLabel));
-    } else {
-      alert("No label to copy!");
+    function stopDetection() {
+      clearInterval(detectionInterval);
+      detectionInterval = null;
+      detectionRunning = false;
+      resultImg.style.display = "none";
+      labelsDiv.innerText = "Detection Stopped";
+      currentLabel = "";
     }
-  }
 
-  window.onload = startCamera;
-</script>
+    function copyLabels() {
+      if (currentLabel) {
+        navigator.clipboard.writeText(currentLabel)
+          .then(() => alert("Copied: " + currentLabel));
+      } else {
+        alert("No label to copy!");
+      }
+    }
+
+    window.onload = startCamera;
+  </script>
 </body>
 </html>
