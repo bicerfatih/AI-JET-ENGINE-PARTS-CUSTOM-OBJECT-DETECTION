@@ -2,116 +2,131 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EEMC Detection</title>
   <style>
     body {
-      background-color: #222;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
+      background-color: #f4f4f4;
+      color: #333;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
+      padding: 0;
     }
 
-    h1 {
+     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      padding: 10px;
+      color: #b20838;
+      font-size: 72px;
     }
 
-    .main-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 30px;
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      gap: 20px;
+      padding: 20px;
       max-width: 1400px;
-      margin: 0 auto;
+      margin: auto;
     }
 
-    .left-banner {
-      flex: 0 0 auto;
-      margin-left: 40px;
-      display: flex;
-      justify-content: flex-end;
+    .card {
+      background-color: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
     }
 
-    .left-banner img {
-      width: 80%;
-      max-width: 300px;
-      border-radius: 10px;
-      border: 2px solid white;
-    }
-
-    .video-section {
-      flex: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-left: -15px;
-      gap: 10px;
+    .banner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* or 'contain' depending on how you want it to scale */
+      border-radius: 15px;
     }
 
     video, img#result {
-      width: 420px;
-      height: auto;
-      border: 2px solid white;
-      border-radius: 10px;
-    }
-
-    .label-section {
-      flex: 0 0 auto;
-      margin-right: 100px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    #labels {
-      background: white;
-      color: black;
-      padding: 20px;
-      border-radius: 10px;
-      font-size: 18px;
-      min-height: 80px;
       width: 100%;
-      text-align: center;
-      margin-bottom: 10px;
+      border-radius: 15px;
+      border: 2px solid #ccc;
+      margin-bottom: 15px;
     }
 
     .button-group {
       display: flex;
+      justify-content: center;
       gap: 10px;
+      margin-top: 10px;
     }
 
-    .button-group button,
-    .copy-btn {
-      width: 150px;
+    .button-group button {
+      flex: 1;                  /* ✅ Equal width for both buttons */
+      width: 100%;              /* ✅ Match width of Copy Labels */
       padding: 10px 0;
       font-size: 16px;
-      border-radius: 5px;
       border: none;
+      border-radius: 8px;
       cursor: pointer;
-      text-align: center;
+      transition: background 0.3s;
     }
 
-    .start-btn { background-color: green; color: white; }
-    .stop-btn { background-color: red; color: white; }
-    .copy-btn { background-color: gold; color: black; }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .start-btn {
+      background-color: #007a33;
+      color: white;
+    }
+
+    .start-btn:hover {
+      background-color: #005a26;
+    }
+
+    .stop-btn {
+      background-color: #d71920;
+      color: white;
+    }
+
+    .stop-btn:hover {
+      background-color: #a8141b;
+    }
+
+    .copy-btn {
+      background-color: #f9c232;
+      color: black;
+      width: 100%;
+    }
+
+    .labels {
+      font-size: 18px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      min-height: 60px;
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
   <h1>EEMC - AI Jet Engine Parts Detection</h1>
 
-  <div class="main-container">
-    <!-- Left banner -->
-    <div class="left-banner">
-      <img src="static/EEMC_Banner.png" alt="EEMC Banner" />
+  <div class="container">
+    <!-- Left: Banner -->
+    <div class="card banner">
+      <img src="static/EEMC_Banner.png" alt="EEMC Banner">
     </div>
 
-    <!-- Center: Video + Result -->
-    <div class="video-section">
+    <!-- Center: Video + Detection -->
+    <div class="card">
       <video id="video" autoplay playsinline></video>
       <canvas id="canvas" style="display:none;"></canvas>
-      <img id="result" src="" alt="Detected Image" style="display: none;" />
+      <img id="result" src="" alt="Detected Image" style="display:none;" />
       <div class="button-group">
         <button class="start-btn" onclick="startDetection()">Start Detection</button>
         <button class="stop-btn" onclick="stopDetection()">Stop Detection</button>
@@ -119,8 +134,8 @@
     </div>
 
     <!-- Right: Labels + Copy -->
-    <div class="label-section">
-      <div id="labels">Detection Not Started</div>
+    <div class="card">
+      <div id="labels" class="labels">Detection Not Started</div>
       <button class="copy-btn" onclick="copyLabels()">Copy Labels</button>
     </div>
   </div>
@@ -133,7 +148,8 @@
 
     let detectionInterval = null;
     let currentLabel = "";
-    let detectionRunning = false;  // ✅ NEW: control rendering after stop
+    let detectionRunning = false;
+    let currentSessionId = null;
 
     async function startCamera() {
       try {
@@ -145,22 +161,19 @@
       }
     }
 
-    async function sendFrame() {
+    async function sendFrame(sessionId) {
       const context = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       canvas.toBlob(async (blob) => {
+        if (!blob) return;
         const formData = new FormData();
         formData.append('image', blob, 'frame.jpg');
 
         try {
-          const response = await fetch('/detect', {
-            method: 'POST',
-            body: formData
-          });
-
+          const response = await fetch('/detect', { method: 'POST', body: formData });
           const labelsHeader = response.headers.get("X-Labels");
           if (labelsHeader) {
             const detectedLabel = labelsHeader.split("|")[0];
@@ -172,13 +185,10 @@
 
           const imageBlob = await response.blob();
           const objectURL = URL.createObjectURL(imageBlob);
-
-          // ✅ Only display if detection is still running
-          if (detectionRunning) {
+          if (detectionRunning && sessionId === currentSessionId) {
             resultImg.src = objectURL;
             resultImg.style.display = "block";
           }
-
         } catch (err) {
           console.error('Detection failed:', err);
         }
@@ -188,7 +198,8 @@
     function startDetection() {
       if (!detectionInterval) {
         detectionRunning = true;
-        detectionInterval = setInterval(sendFrame, 2000); // every 1 second
+        currentSessionId = Date.now();
+        detectionInterval = setInterval(() => sendFrame(currentSessionId), 1000);
       }
     }
 
@@ -196,6 +207,7 @@
       clearInterval(detectionInterval);
       detectionInterval = null;
       detectionRunning = false;
+      currentSessionId = null;
       resultImg.style.display = "none";
       labelsDiv.innerText = "Detection Stopped";
       currentLabel = "";
