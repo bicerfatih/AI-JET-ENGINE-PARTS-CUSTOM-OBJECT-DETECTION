@@ -126,91 +126,94 @@
   </div>
 
   <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const resultImg = document.getElementById('result');
-    const labelsDiv = document.getElementById('labels');
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const resultImg = document.getElementById('result');
+  const labelsDiv = document.getElementById('labels');
 
-    let detectionInterval = null;
-    let currentLabel = "";
-    let detectionRunning = false;  // ✅ NEW: control rendering after stop
+  let detectionInterval = null;
+  let currentLabel = "";
+  let detectionRunning = false;
+  let currentSessionId = null;
 
-    async function startCamera() {
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+    } catch (err) {
+      alert('Webcam access denied!');
+      console.error(err);
+    }
+  }
+
+  async function sendFrame(sessionId) {
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async (blob) => {
+      const formData = new FormData();
+      formData.append('image', blob, 'frame.jpg');
+
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-      } catch (err) {
-        alert('Webcam access denied!');
-        console.error(err);
-      }
-    }
+        const response = await fetch('/detect', {
+          method: 'POST',
+          body: formData
+        });
 
-    async function sendFrame() {
-      const context = canvas.getContext('2d');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      canvas.toBlob(async (blob) => {
-        const formData = new FormData();
-        formData.append('image', blob, 'frame.jpg');
-
-        try {
-          const response = await fetch('/detect', {
-            method: 'POST',
-            body: formData
-          });
-
-          const labelsHeader = response.headers.get("X-Labels");
-          if (labelsHeader) {
-            const detectedLabel = labelsHeader.split("|")[0];
-            if (detectedLabel && detectedLabel !== currentLabel) {
-              currentLabel = detectedLabel;
-              labelsDiv.innerText = currentLabel;
-            }
+        const labelsHeader = response.headers.get("X-Labels");
+        if (labelsHeader) {
+          const detectedLabel = labelsHeader.split("|")[0];
+          if (detectedLabel && detectedLabel !== currentLabel) {
+            currentLabel = detectedLabel;
+            labelsDiv.innerText = currentLabel;
           }
-
-          const imageBlob = await response.blob();
-          const objectURL = URL.createObjectURL(imageBlob);
-
-          // ✅ Only display if detection is still running
-          if (detectionRunning) {
-            resultImg.src = objectURL;
-            resultImg.style.display = "block";
-          }
-
-        } catch (err) {
-          console.error('Detection failed:', err);
         }
-      }, 'image/jpeg');
-    }
 
-    function startDetection() {
-      if (!detectionInterval) {
-        detectionRunning = true;
-        detectionInterval = setInterval(sendFrame, 1000); // every 1 second
+        const imageBlob = await response.blob();
+        const objectURL = URL.createObjectURL(imageBlob);
+
+        // ✅ Only update the result if still in the correct detection session
+        if (detectionRunning && sessionId === currentSessionId) {
+          resultImg.src = objectURL;
+          resultImg.style.display = "block";
+        }
+
+      } catch (err) {
+        console.error('Detection failed:', err);
       }
-    }
+    }, 'image/jpeg');
+  }
 
-    function stopDetection() {
-      clearInterval(detectionInterval);
-      detectionInterval = null;
-      detectionRunning = false;
-      resultImg.style.display = "none";
-      labelsDiv.innerText = "Detection Stopped";
-      currentLabel = "";
+  function startDetection() {
+    if (!detectionInterval) {
+      detectionRunning = true;
+      currentSessionId = Date.now(); // generate a new unique session ID
+      detectionInterval = setInterval(() => sendFrame(currentSessionId), 1000);
     }
+  }
 
-    function copyLabels() {
-      if (currentLabel) {
-        navigator.clipboard.writeText(currentLabel)
-          .then(() => alert("Copied: " + currentLabel));
-      } else {
-        alert("No label to copy!");
-      }
+  function stopDetection() {
+    clearInterval(detectionInterval);
+    detectionInterval = null;
+    detectionRunning = false;
+    currentSessionId = null; // invalidate old session
+    resultImg.style.display = "none";
+    labelsDiv.innerText = "Detection Stopped";
+    currentLabel = "";
+  }
+
+  function copyLabels() {
+    if (currentLabel) {
+      navigator.clipboard.writeText(currentLabel)
+        .then(() => alert("Copied: " + currentLabel));
+    } else {
+      alert("No label to copy!");
     }
+  }
 
-    window.onload = startCamera;
-  </script>
+  window.onload = startCamera;
+</script>
 </body>
 </html>
