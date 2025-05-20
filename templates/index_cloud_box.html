@@ -130,8 +130,10 @@
     const canvas = document.getElementById('canvas');
     const resultImg = document.getElementById('result');
     const labelsDiv = document.getElementById('labels');
+
     let detectionInterval = null;
     let currentLabel = "";
+    let detectionRunning = false;  // ✅ NEW: control rendering after stop
 
     async function startCamera() {
       try {
@@ -170,8 +172,13 @@
 
           const imageBlob = await response.blob();
           const objectURL = URL.createObjectURL(imageBlob);
-          resultImg.src = objectURL;
-          resultImg.style.display = "block";
+
+          // ✅ Only display if detection is still running
+          if (detectionRunning) {
+            resultImg.src = objectURL;
+            resultImg.style.display = "block";
+          }
+
         } catch (err) {
           console.error('Detection failed:', err);
         }
@@ -180,16 +187,18 @@
 
     function startDetection() {
       if (!detectionInterval) {
-        detectionInterval = setInterval(sendFrame, 2000);
+        detectionRunning = true;
+        detectionInterval = setInterval(sendFrame, 1000); // every 1 second
       }
     }
 
     function stopDetection() {
       clearInterval(detectionInterval);
       detectionInterval = null;
+      detectionRunning = false;
+      resultImg.style.display = "none";
       labelsDiv.innerText = "Detection Stopped";
       currentLabel = "";
-      resultImg.style.display = "none";
     }
 
     function copyLabels() {
