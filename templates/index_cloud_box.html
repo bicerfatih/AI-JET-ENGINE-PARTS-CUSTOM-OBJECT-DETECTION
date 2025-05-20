@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EEMC Detection</title>
+  <style>
+    body {
+      background-color: #222;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: 0;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .main-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 30px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .left-banner {
+      flex: 0 0 auto;
+      margin-left: 40px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .left-banner img {
+      width: 80%;
+      max-width: 300px;
+      border-radius: 10px;
+      border: 2px solid white;
+    }
+
+    .video-section {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-left: -15px;
+      gap: 10px;
+    }
+
+    video, img#result {
+      width: 420px;
+      height: auto;
+      border: 2px solid white;
+      border-radius: 10px;
+    }
+
+    .label-section {
+      flex: 0 0 auto;
+      margin-right: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #labels {
+      background: white;
+      color: black;
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 18px;
+      min-height: 80px;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .button-group button,
+    .copy-btn {
+      width: 150px;
+      padding: 10px 0;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .start-btn { background-color: green; color: white; }
+    .stop-btn { background-color: red; color: white; }
+    .copy-btn { background-color: gold; color: black; }
+  </style>
+</head>
+<body>
+  <h1>EEMC - AI Jet Engine Parts Detection</h1>
+
+  <div class="main-container">
+    <!-- Left banner -->
+    <div class="left-banner">
+      <img src="static/EEMC_Banner.png" alt="EEMC Banner" />
+    </div>
+
+    <!-- Center: Video + Result -->
+    <div class="video-section">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas" style="display:none;"></canvas>
+      <img id="result" src="" alt="Detected Image" style="display: none;" />
+      <div class="button-group">
+        <button class="start-btn" onclick="startDetection()">Start Detection</button>
+        <button class="stop-btn" onclick="stopDetection()">Stop Detection</button>
+      </div>
+    </div>
+
+    <!-- Right: Labels + Copy -->
+    <div class="label-section">
+      <div id="labels">Detection Not Started</div>
+      <button class="copy-btn" onclick="copyLabels()">Copy Labels</button>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const resultImg = document.getElementById('result');
+    const labelsDiv = document.getElementById('labels');
+    let detectionInterval = null;
+    let currentLabel = "";
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (err) {
+        alert('Webcam access denied!');
+        console.error(err);
+      }
+    }
+
+    async function sendFrame() {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append('image', blob, 'frame.jpg');
+
+        try {
+          const response = await fetch('/detect', {
+            method: 'POST',
+            body: formData
+          });
+
+          const labelsHeader = response.headers.get("X-Labels");
+          if (labelsHeader) {
+            const detectedLabel = labelsHeader.split("|")[0];
+            if (detectedLabel && detectedLabel !== currentLabel) {
+              currentLabel = detectedLabel;
+              labelsDiv.innerText = currentLabel;
+            }
+          }
+
+          const imageBlob = await response.blob();
+          const objectURL = URL.createObjectURL(imageBlob);
+          resultImg.src = objectURL;
+          resultImg.style.display = "block";
+        } catch (err) {
+          console.error('Detection failed:', err);
+        }
+      }, 'image/jpeg');
+    }
+
+    function startDetection() {
+      if (!detectionInterval) {
+        detectionInterval = setInterval(sendFrame, 200);
+      }
+    }
+
+    function stopDetection() {
+      clearInterval(detectionInterval);
+      detectionInterval = null;
+      labelsDiv.innerText = "Detection Stopped";
+      currentLabel = "";
+      resultImg.style.display = "none";
+    }
+
+    function copyLabels() {
+      if (currentLabel) {
+        navigator.clipboard.writeText(currentLabel)
+          .then(() => alert("Copied: " + currentLabel));
+      } else {
+        alert("No label to copy!");
+      }
+    }
+
+    window.onload = startCamera;
+  </script>
+</body>
+</html>
