@@ -14,7 +14,7 @@ model = YOLO("best_EEMC(5).pt")
 
 @app.route('/')
 def index():
-    return render_template('index_cloud_box_render.html')  # Make sure this exists in /templates/
+    return render_template('index_cloud_box.html')  # Make sure this exists in /templates/
 
 @app.route('/detect', methods=['POST'])
 def detect():
