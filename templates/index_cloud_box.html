@@ -107,6 +107,14 @@
       border: 1px solid #ddd;
       margin-bottom: 10px;
     }
+
+    #cameraSelect {
+      width: 100%;
+      margin-bottom: 15px;
+      font-size: 16px;
+      padding: 8px;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -120,6 +128,7 @@
 
     <!-- Center: Video + Detection -->
     <div class="card">
+      <select id="cameraSelect"></select>
       <video id="video" autoplay playsinline></video>
       <canvas id="canvas" style="display:none;"></canvas>
       <img id="result" src="" alt="Detected Image" style="display:none;" />
@@ -141,28 +150,56 @@
     const canvas = document.getElementById('canvas');
     const resultImg = document.getElementById('result');
     const labelsDiv = document.getElementById('labels');
+    const cameraSelect = document.getElementById('cameraSelect');
 
     let detectionRunning = false;
     let currentLabel = "";
     let currentSessionId = null;
+    let stream = null;
 
-    async function startCamera() {
+    async function listCameras() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+      cameraSelect.innerHTML = "";
+      videoDevices.forEach((device, index) => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.text = device.label || `Camera ${index + 1}`;
+        cameraSelect.appendChild(option);
+      });
+
+      if (videoDevices.length > 0) {
+        startCamera(videoDevices[0].deviceId); // Start with first camera
+      }
+    }
+
+    async function startCamera(deviceId) {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: deviceId } }
+        });
         video.srcObject = stream;
       } catch (err) {
-        alert('Webcam access denied!');
+        alert('Webcam access denied or unavailable.');
         console.error(err);
       }
     }
 
+    cameraSelect.addEventListener('change', () => {
+      const selectedDeviceId = cameraSelect.value;
+      startCamera(selectedDeviceId);
+    });
+
     async function sendFrame(sessionId) {
       const context = canvas.getContext('2d');
-
       const scale = Math.min(640 / video.videoWidth, 1);
       canvas.width = video.videoWidth * scale;
       canvas.height = video.videoHeight * scale;
-
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       return new Promise((resolve) => {
@@ -186,8 +223,7 @@
 
             const imageBlob = await response.blob();
             const objectURL = URL.createObjectURL(imageBlob);
-
-            resultImg.src = "";  // Flush previous frame
+            resultImg.src = "";
             resultImg.src = objectURL;
             resultImg.style.display = "block";
           } catch (err) {
@@ -202,7 +238,7 @@
     async function sendFrameControlled(sessionId) {
       while (detectionRunning && sessionId === currentSessionId) {
         await sendFrame(sessionId);
-        await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2 sec
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
 
@@ -231,7 +267,7 @@
       }
     }
 
-    window.onload = startCamera;
+    window.onload = listCameras;
   </script>
 </body>
 </html>
