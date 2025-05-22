@@ -44,7 +44,15 @@
       border-radius: 15px;
     }
 
-    video, img#result {
+    #video {
+      width: 100%;
+      max-width: 300px;
+      border-radius: 10px;
+      border: 2px solid #ccc;
+      margin-bottom: 15px;
+    }
+
+    #result {
       width: 100%;
       border-radius: 15px;
       border: 2px solid #ccc;
@@ -90,7 +98,6 @@
       background-color: #f9c232;
       color: black;
       width: 100%;
-      margin-top: 10px;
       padding: 10px;
       font-size: 16px;
       border: none;
@@ -106,6 +113,7 @@
       min-height: 60px;
       border: 1px solid #ddd;
       margin-bottom: 10px;
+      width: 100%;
     }
 
     #cameraSelect {
@@ -114,6 +122,17 @@
       font-size: 16px;
       padding: 8px;
       border-radius: 8px;
+    }
+
+    .right-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .right-content > * {
+      max-width: 300px;
+      width: 100%;
     }
   </style>
 </head>
@@ -126,11 +145,8 @@
       <img src="static/EEMC_Banner.png" alt="EEMC Banner">
     </div>
 
-    <!-- Center: Video + Detection -->
+    <!-- Center: Result Image + Buttons -->
     <div class="card">
-      <select id="cameraSelect"></select>
-      <video id="video" autoplay playsinline></video>
-      <canvas id="canvas" style="display:none;"></canvas>
       <img id="result" src="" alt="Detected Image" style="display:none;" />
       <div class="button-group">
         <button class="start-btn" onclick="startDetection()">Start Detection</button>
@@ -138,12 +154,16 @@
       </div>
     </div>
 
-    <!-- Right: Labels + Copy -->
-    <div class="card">
+    <!-- Right: Live Webcam + Label + Copy -->
+    <div class="card right-content">
+      <select id="cameraSelect"></select>
+      <video id="video" autoplay playsinline></video>
       <div id="labels" class="labels">Detection Not Started</div>
       <button class="copy-btn" onclick="copyLabels()">Copy Labels</button>
     </div>
   </div>
+
+  <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
     const video = document.getElementById('video');
@@ -170,7 +190,7 @@
       });
 
       if (videoDevices.length > 0) {
-        startCamera(videoDevices[0].deviceId); // Start with first camera
+        startCamera(videoDevices[0].deviceId);
       }
     }
 
