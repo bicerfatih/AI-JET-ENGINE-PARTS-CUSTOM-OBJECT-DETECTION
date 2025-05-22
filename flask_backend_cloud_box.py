@@ -33,7 +33,7 @@ def detect():
         x1, y1, x2, y2 = map(int, box.xyxy[0])
         label = results.names[int(box.cls[0])]
         conf = float(box.conf[0])
-        labels.append(f"{label} ({conf:.2f})")
+        labels.append(label)
 
         # Draw bounding boxes and label text
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
