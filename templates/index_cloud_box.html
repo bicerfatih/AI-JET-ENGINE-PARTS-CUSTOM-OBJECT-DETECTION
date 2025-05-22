@@ -142,9 +142,8 @@
     const resultImg = document.getElementById('result');
     const labelsDiv = document.getElementById('labels');
 
-    let detectionInterval = null;
-    let currentLabel = "";
     let detectionRunning = false;
+    let currentLabel = "";
     let currentSessionId = null;
 
     async function startCamera() {
@@ -159,50 +158,63 @@
 
     async function sendFrame(sessionId) {
       const context = canvas.getContext('2d');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+
+      const scale = Math.min(640 / video.videoWidth, 1);
+      canvas.width = video.videoWidth * scale;
+      canvas.height = video.videoHeight * scale;
+
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        const formData = new FormData();
-        formData.append('image', blob, 'frame.jpg');
+      return new Promise((resolve) => {
+        canvas.toBlob(async (blob) => {
+          if (!blob || sessionId !== currentSessionId || !detectionRunning) return resolve();
 
-        try {
-          const response = await fetch('/detect', { method: 'POST', body: formData });
+          const formData = new FormData();
+          formData.append('image', blob, 'frame.jpg');
 
-          const labelsHeader = response.headers.get("X-Labels");
-          if (labelsHeader) {
-            const detectedLabel = labelsHeader.split("|")[0];
-            if (detectedLabel && detectedLabel !== currentLabel) {
-              currentLabel = detectedLabel;
-              labelsDiv.innerText = currentLabel;
+          try {
+            const response = await fetch('/detect', { method: 'POST', body: formData });
+            const labelsHeader = response.headers.get("X-Labels");
+
+            if (labelsHeader) {
+              const detectedLabel = labelsHeader.split("|")[0];
+              if (detectedLabel && detectedLabel !== currentLabel) {
+                currentLabel = detectedLabel;
+                labelsDiv.innerText = currentLabel;
+              }
             }
-          }
 
-          const imageBlob = await response.blob();
-          const objectURL = URL.createObjectURL(imageBlob);
-          if (detectionRunning && sessionId === currentSessionId) {
+            const imageBlob = await response.blob();
+            const objectURL = URL.createObjectURL(imageBlob);
+
+            resultImg.src = "";  // Flush previous frame
             resultImg.src = objectURL;
             resultImg.style.display = "block";
+          } catch (err) {
+            console.error('Detection failed:', err);
           }
-        } catch (err) {
-          console.error('Detection failed:', err);
-        }
-      }, 'image/jpeg');
+
+          resolve();
+        }, 'image/jpeg');
+      });
+    }
+
+    async function sendFrameControlled(sessionId) {
+      while (detectionRunning && sessionId === currentSessionId) {
+        await sendFrame(sessionId);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2 sec
+      }
     }
 
     function startDetection() {
-      if (!detectionInterval) {
+      if (!detectionRunning) {
         detectionRunning = true;
         currentSessionId = Date.now();
-        detectionInterval = setInterval(() => sendFrame(currentSessionId), 1000);
+        sendFrameControlled(currentSessionId);
       }
     }
 
     function stopDetection() {
-      clearInterval(detectionInterval);
-      detectionInterval = null;
       detectionRunning = false;
       currentSessionId = null;
       resultImg.style.display = "none";
