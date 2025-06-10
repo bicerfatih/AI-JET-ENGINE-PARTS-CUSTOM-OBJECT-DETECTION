@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EEMC Detection</title>
+  <style>
+    body {
+      background-color: #f4f4f4;
+      color: #333;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 10px;
+      color: #b20838;
+      font-size: 72px;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      gap: 20px;
+      padding: 20px;
+      max-width: 1400px;
+      margin: auto;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .banner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 15px;
+    }
+
+    #video {
+      width: 100%;
+      max-width: 300px;
+      border-radius: 10px;
+      border: 2px solid #ccc;
+      margin-bottom: 15px;
+    }
+
+    #result {
+      width: 100%;
+      border-radius: 15px;
+      border: 2px solid #ccc;
+      margin-bottom: 15px;
+    }
+
+    .part-image-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .part-image {
+      width: 49%;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .button-group button {
+      flex: 1;
+      padding: 10px 0;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .start-btn {
+      background-color: #007a33;
+      color: white;
+    }
+
+    .start-btn:hover {
+      background-color: #005a26;
+    }
+
+    .stop-btn {
+      background-color: #d71920;
+      color: white;
+    }
+
+    .stop-btn:hover {
+      background-color: #a8141b;
+    }
+
+    .copy-btn {
+      background-color: #f9c232;
+      color: black;
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .labels {
+      font-size: 18px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      min-height: 60px;
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    #cameraSelect {
+      width: 100%;
+      margin-bottom: 15px;
+      font-size: 16px;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .right-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .right-content > * {
+      max-width: 300px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>EEMC - AI Jet Engine Parts Detection</h1>
+
+  <div class="container">
+    <div class="card banner">
+      <img src="static/EEMC_Banner.png" alt="EEMC Banner">
+    </div>
+
+    <div class="card">
+      <img id="result" src="" alt="Detected Image" style="display:none;" />
+
+      <div id="partImages" class="part-image-container" style="display:none;">
+        <img id="partImage" class="part-image" src="" alt="Part Image" />
+        <img id="sketchImage" class="part-image" src="" alt="Sketch Image" />
+      </div>
+
+      <div class="button-group">
+        <button class="start-btn" onclick="startDetection()">Start Detection</button>
+        <button class="stop-btn" onclick="stopDetection()">Stop Detection</button>
+      </div>
+    </div>
+
+    <div class="card right-content">
+      <select id="cameraSelect"></select>
+      <video id="video" autoplay playsinline></video>
+      <div id="labels" class="labels">Detection Not Started</div>
+      <button class="copy-btn" onclick="copyLabels()">Copy Labels</button>
+    </div>
+  </div>
+
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const resultImg = document.getElementById('result');
+    const partImage = document.getElementById('partImage');
+    const sketchImage = document.getElementById('sketchImage');
+    const partImagesDiv = document.getElementById('partImages');
+    const labelsDiv = document.getElementById('labels');
+    const cameraSelect = document.getElementById('cameraSelect');
+
+    let detectionRunning = false;
+    let currentLabel = "";
+    let currentSessionId = null;
+    let stream = null;
+
+    const zoom = 1.75;
+    const xOffset = 150;
+    const yOffset = 350;
+
+    async function listCameras() {
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: true });
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+        cameraSelect.innerHTML = "";
+        videoDevices.forEach((device, index) => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.text = device.label || `Camera ${index + 1}`;
+          cameraSelect.appendChild(option);
+        });
+
+        if (videoDevices.length > 0) {
+          startCamera(videoDevices[0].deviceId);
+        }
+      } catch (err) {
+        alert("Please allow camera access to detect USB webcams.");
+        console.error(err);
+      }
+    }
+
+    async function startCamera(deviceId) {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: deviceId } }
+        });
+        video.srcObject = stream;
+      } catch (err) {
+        alert('Webcam access denied or unavailable.');
+        console.error(err);
+      }
+    }
+
+    cameraSelect.addEventListener('change', () => {
+      const selectedDeviceId = cameraSelect.value;
+      startCamera(selectedDeviceId);
+    });
+
+    async function sendFrame(sessionId) {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      context.save();
+      context.scale(zoom, zoom);
+      context.translate(-xOffset / zoom, -yOffset / zoom);
+      context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+      context.restore();
+
+      return new Promise((resolve) => {
+        canvas.toBlob(async (blob) => {
+          if (!blob || sessionId !== currentSessionId || !detectionRunning) return resolve();
+
+          const formData = new FormData();
+          formData.append('image', blob, 'frame.jpg');
+
+          try {
+            const response = await fetch('/detect', { method: 'POST', body: formData });
+            const labelsHeader = response.headers.get("X-Labels");
+
+            if (labelsHeader) {
+              const detectedLabel = labelsHeader.split("|")[0];
+              if (detectedLabel && detectedLabel !== currentLabel) {
+                currentLabel = detectedLabel;
+                labelsDiv.innerText = currentLabel;
+
+                // Load dynamic images
+                partImage.src = `static/parts/${detectedLabel}.png`;
+                sketchImage.src = `static/parts/${detectedLabel}_sketch.png`;
+                partImagesDiv.style.display = "flex";
+              }
+            }
+
+            const imageBlob = await response.blob();
+            const objectURL = URL.createObjectURL(imageBlob);
+            resultImg.src = objectURL;
+            resultImg.style.display = "block";
+          } catch (err) {
+            console.error('Detection failed:', err);
+          }
+
+          resolve();
+        }, 'image/jpeg');
+      });
+    }
+
+    async function sendFrameControlled(sessionId) {
+      while (detectionRunning && sessionId === currentSessionId) {
+        await sendFrame(sessionId);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+
+    function startDetection() {
+      if (!detectionRunning) {
+        detectionRunning = true;
+        currentSessionId = Date.now();
+        sendFrameControlled(currentSessionId);
+      }
+    }
+
+    function stopDetection() {
+      detectionRunning = false;
+      currentSessionId = null;
+      resultImg.style.display = "none";
+      partImagesDiv.style.display = "none";
+      labelsDiv.innerText = "Detection Stopped";
+      currentLabel = "";
+    }
+
+    function copyLabels() {
+      if (currentLabel) {
+        navigator.clipboard.writeText(currentLabel)
+          .then(() => alert("Copied: " + currentLabel));
+      } else {
+        alert("No label to copy!");
+      }
+    }
+
+    window.onload = listCameras;
+  </script>
+</body>
+</html>
