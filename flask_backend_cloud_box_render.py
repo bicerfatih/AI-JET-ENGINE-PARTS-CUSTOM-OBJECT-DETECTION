@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Load the YOLO model
-model = YOLO("EEMC_ForsaTek2.pt")
+model = YOLO("EEMC_ForsaTek_Medium.pt")
 
 @app.route('/')
 def index():
