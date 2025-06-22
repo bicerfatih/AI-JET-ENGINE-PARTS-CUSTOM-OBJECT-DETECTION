@@ -3,7 +3,7 @@ services:
     name: eemc-object-detection
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python flask_backend_cloud_box.py
+    startCommand: python flask_backend_cloud_box_render.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.10
