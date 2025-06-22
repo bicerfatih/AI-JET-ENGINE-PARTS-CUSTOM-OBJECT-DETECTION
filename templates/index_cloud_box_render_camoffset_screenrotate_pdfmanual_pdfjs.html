@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EEMC Detection</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f4f4f4;
+      color: #333;
+      font-family: 'Inter', sans-serif; /* Changed to Inter */
+      margin: 0;
+      padding: 0;
+    }
+
+    .title-container {
+      text-align: center;
+      padding: 10px;
+    }
+
+    .title-main {
+      color: #b20838;
+      font-size: 120px; /* 2x original 72px */
+      font-weight: bold;
+      margin: 0;
+      line-height: 1;
+    }
+
+    .title-sub {
+      color: #b20838;
+      font-size: 72px; /* Original h1 size for subtitle */
+      font-weight: bold;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      max-width: 1400px;
+      margin: auto;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .top-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 20px;
+    }
+
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .banner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 15px;
+    }
+
+    #video {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 10px;
+      border: 2px solid #ccc;
+      margin-bottom: 15px;
+    }
+
+    #result {
+      width: 100%;
+      border-radius: 15px;
+      border: 2px solid #ccc;
+      margin-bottom: 100px;
+    }
+
+    .part-image-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .part-image {
+      width: 49%;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 10px;
+      margin-bottom: 10px; /* 10px gap for manual button to ID NUMBER */
+    }
+
+    .button-group button {
+      flex: 1;
+      padding: 30px 10px; /* 3x height */
+      font-size: 32px; /* 2x font size */
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .label-section .start-btn {
+      background-color: #005BAC;
+      color: white;
+    }
+
+    .label-section .start-btn:hover {
+      background-color: #004385;
+    }
+
+    .label-section .stop-btn {
+      background-color: #005BAC;
+      color: white;
+    }
+
+    .label-section .stop-btn:hover {
+      background-color: #004385;
+    }
+
+    .start-btn {
+      background-color: #007a33;
+      color: white;
+    }
+
+    .start-btn:hover {
+      background-color: #005a26;
+    }
+
+    .stop-btn {
+      background-color: #d71920;
+      color: white;
+    }
+
+    .stop-btn:hover {
+      background-color: #a8141b;
+    }
+
+    .copy-btn {
+      background-color: #f9c232;
+      color: black;
+      width: 100%;
+      padding: 30px 10px; /* 3x height */
+      font-size: 32px; /* 2x font size */
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 40px; /* Increased space above */
+    }
+
+    .manual-btn {
+      background-color: #005BAC; /* Blue color */
+      color: white;
+      width: 100%;
+      padding: 30px 10px; /* 3x height */
+      font-size: 32px; /* 2x font size */
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .manual-btn:hover {
+      background-color: #004385; /* Blue hover color */
+    }
+
+    .labels {
+      font-size: 54px; /* 3x font size */
+      font-weight: bold; /* Bold text */
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      min-height: 60px;
+      border: 1px solid #ddd;
+      margin-bottom: 20px;
+      width: 95%;
+    }
+
+    .id-label {
+      font-size: 54px; /* Same as .labels */
+      font-weight: bold; /* Bold text */
+      color: #b20838; /* Red color */
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    #cameraSelect {
+      width: 100%;
+      margin-bottom: 15px;
+      font-size: 16px;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .bottom-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .camera-feed {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .label-section {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Styles for the PDF viewer container */
+    #pdfViewerContainer {
+        position: relative; /* For positioning the close button */
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 20px; /* Consistent padding */
+        margin-top: 20px;
+        overflow: hidden; /* Ensures iframe respects border-radius */
+        height: 800px; /* Set a fixed height or adjust as needed */
+        width: 100%;
+        display: none; /* Hidden by default */
+        text-align: center; /* For loading message */
+    }
+
+    #closePdfButton {
+        position: absolute;
+        top: 30px; /* Adjust based on padding */
+        right: 30px; /* Adjust based on padding */
+        background-color: #d71920;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 10; /* Ensure button is above iframe content */
+    }
+
+    /* Loading message for PDF viewer */
+    #pdfLoadingMessage {
+        font-size: 24px;
+        font-weight: bold;
+        color: #555;
+        margin-top: 50px;
+        display: none; /* Hidden by default */
+    }
+
+    @media (max-width: 768px) {
+      .top-row {
+        grid-template-columns: 1fr;
+      }
+
+      .bottom-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .title-main {
+        font-size: 96px; /* Adjusted for mobile */
+      }
+
+      .title-sub {
+        font-size: 48px; /* Adjusted for mobile */
+      }
+
+      .copy-btn {
+        margin-top: 20px; /* Slightly less space on mobile */
+      }
+
+      #pdfViewerContainer {
+          height: 60vh; /* Adjust for smaller screens */
+      }
+
+      #closePdfButton {
+          top: 20px;
+          right: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="title-container">
+    <h1 class="title-main">EEMC</h1>
+    <h2 class="title-sub">AI Enabled Engine Parts</h2>
+    <h2 class="title-sub">Detection Platform</h2>
+
+  </div>
+
+  <div class="main-container">
+    <div class="top-row">
+      <!-- Left Column - Banner -->
+      <div class="card banner">
+        <img src="static/EEMC_Banner.png" alt="EEMC Banner">
+      </div>
+
+      <!-- Right Column - Detection Results -->
+      <div class="card">
+        <img id="result" src="" alt="Detected Image" style="display:none;" />
+
+        <div id="partImages" class="part-image-container" style="display:none;">
+          <img id="partImage" class="part-image" src="" alt="Part Image" />
+          <img id="sketchImage" class="part-image" src="" alt="Sketch Image" />
+        </div>
+
+        <div class="button-group">
+          <button class="start-btn" onclick="startDetection()">Start Detection</button>
+          <button class="stop-btn" onclick="stopDetection()">Stop Detection</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Row - Camera Feed and Labels -->
+    <div class="bottom-row">
+      <div class="card bottom-panel">
+        <div class="camera-feed">
+          <select id="cameraSelect"></select>
+          <video id="video" autoplay playsinline></video>
+        </div>
+
+        <div class="label-section">
+          <div class="button-group">
+            <!-- Manual button now calls showManual() to open embedded PDF.js viewer -->
+            <button class="manual-btn" onclick="showManual()">Jet Engine Maintenance Manual</button>
+          </div>
+          <div class="id-label">ID NUMBER</div>
+          <div id="labels" class="labels">Detection Not Started</div>
+          <button class="copy-btn" onclick="copyLabels()">Copy Labels</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF Viewer Container - Hidden by default -->
+    <div id="pdfViewerContainer">
+        <div id="pdfLoadingMessage">Loading Manual...</div>
+        <iframe id="pdfViewer" src="" style="width: 100%; height: 100%; border: none; border-radius: 15px;"></iframe>
+        <button onclick="closePdfViewer()" id="closePdfButton" style="display:none;">X</button>
+    </div>
+  </div>
+
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const resultImg = document.getElementById('result');
+    const partImage = document.getElementById('partImage');
+    const sketchImage = document.getElementById('sketchImage');
+    const partImagesDiv = document.getElementById('partImages');
+    const labelsDiv = document.getElementById('labels');
+    const cameraSelect = document.getElementById('cameraSelect');
+
+    // New PDF viewer elements
+    const pdfViewerContainer = document.getElementById('pdfViewerContainer');
+    const pdfViewer = document.getElementById('pdfViewer');
+    const closePdfButton = document.getElementById('closePdfButton');
+    const pdfLoadingMessage = document.getElementById('pdfLoadingMessage');
+
+
+    let detectionRunning = false;
+    let currentLabel = "";
+    let currentSessionId = null; // Not directly used in current Flask logic but good for session tracking
+    let stream = null;
+    let detectionInterval = null;
+
+    const zoom = 1.75;
+    const xOffset = 150;
+    const yOffset = 350;
+
+    /**
+     * Lists available camera devices and populates the camera selection dropdown.
+     * Starts the first available camera.
+     */
+    async function listCameras() {
+      try {
+        // Request camera permissions first to ensure all devices are enumerated
+        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        tempStream.getTracks().forEach(track => track.stop()); // Stop temporary stream
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+        console.log('Enumerated video devices:', videoDevices); // Debug log
+
+        if (videoDevices.length === 0) {
+          labelsDiv.innerText = "No cameras found";
+          console.error("No video input devices found");
+          return;
+        }
+
+        // Clear existing options
+        cameraSelect.innerHTML = "";
+        videoDevices.forEach((device, index) => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.text = device.label || `Camera ${index + 1}`;
+          cameraSelect.appendChild(option);
+        });
+
+        // Start with the first camera (or previously selected if remembered)
+        await startCamera(videoDevices[0].deviceId);
+      } catch (err) {
+        console.error("Camera enumeration error:", err.message, err.stack);
+        labelsDiv.innerText = "Camera access denied. Please allow camera permissions.";
+        // Use custom modal/message box instead of alert in production
+        // alert("Please allow camera permissions in your browser settings.");
+      }
+    }
+
+    /**
+     * Starts the video stream from a specified camera device.
+     * @param {string} deviceId - The device ID of the camera to start.
+     */
+    async function startCamera(deviceId) {
+      // Stop any existing stream before starting a new one
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: { exact: deviceId }, // Request specific camera
+          }
+        });
+        video.srcObject = stream; // Assign stream to video element
+        await video.play(); // Start playing the video
+        labelsDiv.innerText = "Camera started";
+      } catch (err) {
+        console.error('Camera start error:', err.message, err.stack);
+        labelsDiv.innerText = `Failed to start camera: ${err.message}`;
+      }
+    }
+
+    // Event listener for camera selection change
+    cameraSelect.addEventListener('change', async () => {
+      const selectedDeviceId = cameraSelect.value;
+      await startCamera(selectedDeviceId);
+    });
+
+    /**
+     * Captures a frame from the video, applies transformations, and sends it to the server for detection.
+     */
+    async function sendFrame() {
+      if (!detectionRunning || !stream) {
+          console.log("Detection not running or stream not available. Skipping frame send.");
+          return;
+      }
+
+      try {
+        // Set canvas dimensions to match video to ensure full frame capture
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        const context = canvas.getContext('2d');
+        context.save(); // Save current canvas state
+        // Apply zoom and offset transformations for a "cropped" view
+        context.scale(zoom, zoom);
+        context.translate(-xOffset / zoom, -yOffset / zoom);
+        // Draw video frame onto canvas
+        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        context.restore(); // Restore canvas state to clear transformations for next draw
+
+        // Convert canvas content to JPEG blob
+        const blob = await new Promise(resolve => {
+          // Quality 0.9 for balance between size and visual quality
+          canvas.toBlob(resolve, 'image/jpeg', 0.9);
+        });
+
+        if (!blob) {
+          console.error("Failed to create image blob from canvas.");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('image', blob, 'frame.jpg'); // Append image blob to form data
+
+        // Send frame to Flask backend for detection
+        const response = await fetch('/detect', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`Detection failed: ${response.status} ${response.statusText}`);
+        }
+
+        // Get detected labels from X-Labels header
+        const labelsHeader = response.headers.get("X-Labels");
+        if (labelsHeader) {
+          const detectedLabel = labelsHeader.split("|")[0]; // Assuming only the first label is needed
+          updateDetectionResults(detectedLabel);
+        } else {
+          console.warn("No X-Labels header received in detection response.");
+          labelsDiv.innerText = "No object detected"; // Clear or set a message if no labels
+          partImagesDiv.style.display = "none";
+          currentLabel = ""; // Clear current label
+        }
+
+        // Get the processed image blob from the response body and display it
+        const imageBlob = await response.blob();
+        displayResultImage(imageBlob);
+
+      } catch (err) {
+        console.error('Detection error:', err.message, err.stack);
+        if (err.message.includes('fetch')) {
+          labelsDiv.innerText = "Server connection failed or response error.";
+        } else {
+          labelsDiv.innerText = "Detection error occurred.";
+        }
+      }
+    }
+
+    /**
+     * Updates the UI with the detected label and loads corresponding part/sketch images.
+     * @param {string} detectedLabel - The label of the detected object.
+     */
+    function updateDetectionResults(detectedLabel) {
+      if (detectedLabel && detectedLabel !== currentLabel) {
+        currentLabel = detectedLabel;
+        labelsDiv.innerText = currentLabel;
+
+        // Load dynamic images if they exist
+        // Note: These image paths assume they are in static/parts/
+        partImage.src = `static/parts/${detectedLabel}.png`;
+        sketchImage.src = `static/parts/${detectedLabel}_sketch.png`;
+        partImagesDiv.style.display = "flex"; // Show the image container
+      } else if (!detectedLabel) {
+          labelsDiv.innerText = "No object detected";
+          partImagesDiv.style.display = "none";
+          currentLabel = ""; // Clear current label
+      }
+    }
+
+    /**
+     * Displays the processed image from the server in the result image element.
+     * @param {Blob} imageBlob - The image data as a Blob.
+     */
+    function displayResultImage(imageBlob) {
+      const objectURL = URL.createObjectURL(imageBlob);
+      resultImg.onload = () => URL.revokeObjectURL(objectURL); // Clean up Object URL after image loads
+      resultImg.src = objectURL;
+      resultImg.style.display = "block"; // Show the result image
+    }
+
+    /**
+     * Starts the continuous detection process by sending frames at intervals.
+     */
+    function startDetection() {
+      if (detectionRunning) return; // Prevent multiple intervals
+
+      detectionRunning = true;
+      currentSessionId = Date.now(); // Generate a new session ID (optional, but good practice)
+      labelsDiv.innerText = "Detection Running...";
+
+      // Send frames every 2 seconds (adjust as needed for performance/responsiveness)
+      detectionInterval = setInterval(sendFrame, 2000);
+      console.log("Detection started.");
+    }
+
+    /**
+     * Stops the continuous detection process.
+     */
+    function stopDetection() {
+      detectionRunning = false;
+      if (detectionInterval) {
+        clearInterval(detectionInterval); // Clear the interval to stop sending frames
+        detectionInterval = null;
+      }
+
+      resultImg.style.display = "none"; // Hide result image
+      partImagesDiv.style.display = "none"; // Hide part images
+      labelsDiv.innerText = "Detection Stopped"; // Update status
+      currentLabel = ""; // Clear current label
+      console.log("Detection stopped.");
+    }
+
+    /**
+     * Copies the current detected label to the clipboard.
+     */
+    function copyLabels() {
+      if (!currentLabel) {
+        // Use a more subtle UI feedback instead of alert for better UX
+        // alert("No label to copy!");
+        labelsDiv.innerText = "No label to copy!";
+        return;
+      }
+
+      navigator.clipboard.writeText(currentLabel)
+        .then(() => {
+          const copyBtn = document.querySelector('.copy-btn');
+          const originalText = copyBtn.textContent;
+          copyBtn.textContent = "Copied!";
+          setTimeout(() => {
+            copyBtn.textContent = originalText; // Revert text after 2 seconds
+          }, 2000);
+        })
+        .catch(err => {
+          console.error('Copy failed:', err.message, err.stack);
+          // alert("Failed to copy label"); // Avoid alert
+          labelsDiv.innerText = "Failed to copy label!";
+        });
+    }
+
+    /**
+     * Opens the embedded PDF.js viewer and attempts to search for the currentLabel.
+     * Please ensure your static file structure is correct:
+     * - static/EEMC_MANUAL.pdf
+     * - static/pdfjs/web/viewer.html
+     * - static/pdfjs/build/pdf.js
+     * - static/pdfjs/build/pdf.worker.js
+     */
+    function showManual() {
+      if (!currentLabel) {
+        labelsDiv.innerText = "Please detect a part first!";
+        console.warn("Attempted to open manual without a detected label.");
+        return;
+      }
+
+      // Show loading message
+      pdfLoadingMessage.style.display = "block";
+      pdfViewer.style.display = "none"; // Hide iframe until it starts loading
+
+      // Construct the URL for the PDF.js viewer
+      // IMPORTANT FIX: pdfManualPath must be absolute from the server root (starts with /)
+      const pdfManualPath = `/static/EEMC_MANUAL.pdf`; // Path to your PDF file (added leading /)
+      const pdfJsViewerPath = `static/pdfjs/web/viewer.html`; // Path to PDF.js viewer.html
+
+      // Encode the label for URL safety
+      const searchQuery = encodeURIComponent(currentLabel);
+
+      // Full URL for the iframe src
+      const viewerUrl = `${pdfJsViewerPath}?file=${pdfManualPath}#search="${searchQuery}"`;
+
+      console.log("Attempting to load PDF viewer with URL:", viewerUrl);
+
+      try {
+          pdfViewer.src = viewerUrl; // Load the PDF.js viewer with the specific PDF and search query
+      } catch (e) {
+          console.error("Error setting iframe src:", e);
+          pdfLoadingMessage.innerText = "Error loading manual URL.";
+          return;
+      }
+
+
+      pdfViewerContainer.style.display = "block"; // Show the PDF viewer container
+      closePdfButton.style.display = "block"; // Show the close button for the viewer
+
+      // Listen for the iframe to load (might indicate PDF.js viewer itself loaded)
+      pdfViewer.onload = () => {
+          console.log("PDF.js iframe loaded successfully. Now check iframe console for PDF rendering errors.");
+          // Give a small delay before hiding loading message, in case PDF.js takes a moment to render
+          setTimeout(() => {
+              pdfLoadingMessage.style.display = "none"; // Hide loading message
+              pdfViewer.style.display = "block"; // Show the iframe
+          }, 500); // 500ms delay
+      };
+
+      // Handle iframe load errors (important if the viewer.html itself fails to load)
+      pdfViewer.onerror = () => {
+          console.error("Critical: Error loading PDF.js iframe src. Check the path to viewer.html and network.");
+          pdfLoadingMessage.innerText = "Failed to load manual viewer. Check console for details.";
+          pdfViewer.style.display = "none";
+      };
+
+      // Optional: Scroll to the PDF viewer for better visibility if it's below the fold
+      pdfViewerContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /**
+     * Closes the embedded PDF.js viewer.
+     */
+    function closePdfViewer() {
+      pdfViewerContainer.style.display = "none"; // Hide the container
+      closePdfButton.style.display = "none"; // Hide the close button
+      pdfViewer.src = ""; // Clear the iframe src to stop loading and free up resources
+      pdfLoadingMessage.style.display = "none"; // Ensure loading message is hidden
+      console.log("PDF viewer closed.");
+    }
+
+
+    // Initialize on page load
+    window.addEventListener('load', () => {
+      // Initially hide the PDF viewer container (it was set to display:none in style but was overridden by inline style)
+      // We set it to display:none here to ensure it's hidden from the start, as the inline style was removed.
+      pdfViewerContainer.style.display = "none";
+
+      listCameras(); // Start camera listing and initiation
+
+      // Handle page visibility changes to stop detection when tab is not active
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && detectionRunning) {
+          console.log("Page hidden, stopping detection.");
+          stopDetection();
+        } else if (!document.hidden && !detectionRunning && stream) {
+            // Optional: Re-start detection if page becomes visible and a stream is active
+            // This might not be desired if the user manually stopped it previously.
+            // Consider user preference here. For now, it will only restart if it was running.
+            // console.log("Page visible, considering re-starting detection.");
+            // startDetection(); // Uncomment if you want automatic restart on tab focus
+        }
+      });
+
+      // Listen for device changes (e.g., new camera connected/disconnected)
+      navigator.mediaDevices.addEventListener('devicechange', listCameras);
+    });
+
+    // Clean up on page unload to stop camera stream and detection
+    window.addEventListener('beforeunload', () => {
+      stopDetection();
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        console.log("Camera stream stopped on unload.");
+      }
+    });
+  </script>
+</body>
+</html>

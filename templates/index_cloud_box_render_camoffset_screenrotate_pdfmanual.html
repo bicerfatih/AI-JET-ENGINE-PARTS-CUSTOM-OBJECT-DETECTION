@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EEMC Detection</title>
+  <style>
+    body {
+      background-color: #f4f4f4;
+      color: #333;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .title-container {
+      text-align: center;
+      padding: 10px;
+    }
+
+    .title-main {
+      color: #b20838;
+      font-size: 120px; /* 2x original 72px */
+      font-weight: bold;
+      margin: 0;
+      line-height: 1;
+    }
+
+    .title-sub {
+      color: #b20838;
+      font-size: 72px; /* Original h1 size for subtitle */
+      font-weight: bold;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      max-width: 1400px;
+      margin: auto;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .top-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 20px;
+    }
+
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .banner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 15px;
+    }
+
+    #video {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 10px;
+      border: 2px solid #ccc;
+      margin-bottom: 15px;
+    }
+
+    #result {
+      width: 100%;
+      border-radius: 15px;
+      border: 2px solid #ccc;
+      margin-bottom: 100px;
+    }
+
+    .part-image-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .part-image {
+      width: 49%;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 10px;
+      margin-bottom: 10px; /* 10px gap for manual button to ID NUMBER */
+    }
+
+    .button-group button {
+      flex: 1;
+      padding: 30px 10px; /* 3x height */
+      font-size: 32px; /* 2x font size */
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .label-section .start-btn {
+      background-color: #005BAC;
+      color: white;
+    }
+
+    .label-section .start-btn:hover {
+      background-color: #004385;
+    }
+
+    .label-section .stop-btn {
+      background-color: #005BAC;
+      color: white;
+    }
+
+    .label-section .stop-btn:hover {
+      background-color: #004385;
+    }
+
+    .start-btn {
+      background-color: #007a33;
+      color: white;
+    }
+
+    .start-btn:hover {
+      background-color: #005a26;
+    }
+
+    .stop-btn {
+      background-color: #d71920;
+      color: white;
+    }
+
+    .stop-btn:hover {
+      background-color: #a8141b;
+    }
+
+    .copy-btn {
+      background-color: #f9c232;
+      color: black;
+      width: 100%;
+      padding: 30px 10px; /* 3x height */
+      font-size: 32px; /* 2x font size */
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 40px; /* Increased space above */
+    }
+
+    .manual-btn {
+      background-color: #005BAC; /* Blue color */
+      color: white;
+      width: 100%;
+      padding: 30px 10px; /* 3x height */
+      font-size: 32px; /* 2x font size */
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .manual-btn:hover {
+      background-color: #004385; /* Blue hover color */
+    }
+
+    .labels {
+      font-size: 54px; /* 3x font size */
+      font-weight: bold; /* Bold text */
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      min-height: 60px;
+      border: 1px solid #ddd;
+      margin-bottom: 20px;
+      width: 95%;
+    }
+
+    .id-label {
+      font-size: 54px; /* Same as .labels */
+      font-weight: bold; /* Bold text */
+      color: #b20838; /* Red color */
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    #cameraSelect {
+      width: 100%;
+      margin-bottom: 15px;
+      font-size: 16px;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .bottom-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .camera-feed {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .label-section {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 768px) {
+      .top-row {
+        grid-template-columns: 1fr;
+      }
+
+      .bottom-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .title-main {
+        font-size: 96px; /* Adjusted for mobile */
+      }
+
+      .title-sub {
+        font-size: 48px; /* Adjusted for mobile */
+      }
+
+      .copy-btn {
+        margin-top: 20px; /* Slightly less space on mobile */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="title-container">
+    <h1 class="title-main">EEMC</h1>
+    <h2 class="title-sub">AI Enabled Engine Parts</h2>
+    <h2 class="title-sub">Detection Platform</h2>
+
+  </div>
+
+  <div class="main-container">
+    <div class="top-row">
+      <!-- Left Column - Banner -->
+      <div class="card banner">
+        <img src="static/EEMC_Banner.png" alt="EEMC Banner">
+      </div>
+
+      <!-- Right Column - Detection Results -->
+      <div class="card">
+        <img id="result" src="" alt="Detected Image" style="display:none;" />
+
+        <div id="partImages" class="part-image-container" style="display:none;">
+          <img id="partImage" class="part-image" src="" alt="Part Image" />
+          <img id="sketchImage" class="part-image" src="" alt="Sketch Image" />
+        </div>
+
+        <div class="button-group">
+          <button class="start-btn" onclick="startDetection()">Start Detection</button>
+          <button class="stop-btn" onclick="stopDetection()">Stop Detection</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Row - Camera Feed and Labels -->
+    <div class="bottom-row">
+      <div class="card bottom-panel">
+        <div class="camera-feed">
+          <select id="cameraSelect"></select>
+          <video id="video" autoplay playsinline></video>
+        </div>
+
+        <div class="label-section">
+          <div class="button-group">
+            <button class="manual-btn" onclick="showManual()">Jet Engine Maintenance Manual</button>
+          </div>
+          <div class="id-label">ID NUMBER</div>
+          <div id="labels" class="labels">Detection Not Started</div>
+          <button class="copy-btn" onclick="copyLabels()">Copy Labels</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const resultImg = document.getElementById('result');
+    const partImage = document.getElementById('partImage');
+    const sketchImage = document.getElementById('sketchImage');
+    const partImagesDiv = document.getElementById('partImages');
+    const labelsDiv = document.getElementById('labels');
+    const cameraSelect = document.getElementById('cameraSelect');
+
+    let detectionRunning = false;
+    let currentLabel = "";
+    let currentSessionId = null;
+    let stream = null;
+    let detectionInterval = null;
+
+    const zoom = 1.75;
+    const xOffset = 150;
+    const yOffset = 350;
+
+    // Ensure camera permissions and list all cameras
+    async function listCameras() {
+      try {
+        // Request camera permissions first to ensure all devices are enumerated
+        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        tempStream.getTracks().forEach(track => track.stop()); // Stop temporary stream
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+        console.log('Enumerated video devices:', videoDevices); // Debug log
+
+        if (videoDevices.length === 0) {
+          labelsDiv.innerText = "No cameras found";
+          console.error("No video input devices found");
+          return;
+        }
+
+        // Clear existing options
+        cameraSelect.innerHTML = "";
+        videoDevices.forEach((device, index) => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.text = device.label || `Camera ${index + 1}`;
+          cameraSelect.appendChild(option);
+        });
+
+        // Start with the first camera
+        await startCamera(videoDevices[0].deviceId);
+      } catch (err) {
+        console.error("Camera enumeration error:", err.message, err.stack);
+        labelsDiv.innerText = "Camera access denied. Please allow camera permissions.";
+        alert("Please allow camera permissions in your browser settings.");
+      }
+    }
+
+    async function startCamera(deviceId) {
+      // Stop any existing stream
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: { exact: deviceId },
+          }
+        });
+        video.srcObject = stream;
+        await video.play();
+        labelsDiv.innerText = "Camera started";
+      } catch (err) {
+        console.error('Camera start error:', err.message, err.stack);
+        labelsDiv.innerText = `Failed to start camera: ${err.message}`;
+      }
+    }
+
+    cameraSelect.addEventListener('change', async () => {
+      const selectedDeviceId = cameraSelect.value;
+      await startCamera(selectedDeviceId);
+    });
+
+    // Enhanced detection functions
+    async function sendFrame() {
+      if (!detectionRunning || !stream) return;
+
+      try {
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        const context = canvas.getContext('2d');
+        context.save();
+        context.scale(zoom, zoom);
+        context.translate(-xOffset / zoom, -yOffset / zoom);
+        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        context.restore();
+
+        const blob = await new Promise(resolve => {
+          canvas.toBlob(resolve, 'image/jpeg', 0.9);
+        });
+
+        if (!blob) {
+          console.error("Failed to create image blob");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('image', blob, 'frame.jpg');
+
+        const response = await fetch('/detect', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`Detection failed: ${response.status} ${response.statusText}`);
+        }
+
+        const labelsHeader = response.headers.get("X-Labels");
+        if (labelsHeader) {
+          const detectedLabel = labelsHeader.split("|")[0];
+          updateDetectionResults(detectedLabel);
+        } else {
+          console.warn("No X-Labels header in response");
+        }
+
+        const imageBlob = await response.blob();
+        displayResultImage(imageBlob);
+      } catch (err) {
+        console.error('Detection error:', err.message, err.stack);
+        if (err.message.includes('fetch')) {
+          labelsDiv.innerText = "Server connection failed";
+        } else {
+          labelsDiv.innerText = "Detection error occurred";
+        }
+      }
+    }
+
+    function updateDetectionResults(detectedLabel) {
+      if (detectedLabel && detectedLabel !== currentLabel) {
+        currentLabel = detectedLabel;
+        labelsDiv.innerText = currentLabel;
+
+        // Load dynamic images if they exist
+        partImage.src = `static/parts/${detectedLabel}.png`;
+        sketchImage.src = `static/parts/${detectedLabel}_sketch.png`;
+        partImagesDiv.style.display = "flex";
+      }
+    }
+
+    function displayResultImage(imageBlob) {
+      const objectURL = URL.createObjectURL(imageBlob);
+      resultImg.onload = () => URL.revokeObjectURL(objectURL);
+      resultImg.src = objectURL;
+      resultImg.style.display = "block";
+    }
+
+    function startDetection() {
+      if (detectionRunning) return;
+
+      detectionRunning = true;
+      currentSessionId = Date.now();
+      labelsDiv.innerText = "Detection Running...";
+
+      // Send frames every 2 seconds
+      detectionInterval = setInterval(sendFrame, 100);
+    }
+
+    function stopDetection() {
+      detectionRunning = false;
+      if (detectionInterval) {
+        clearInterval(detectionInterval);
+        detectionInterval = null;
+      }
+
+      resultImg.style.display = "none";
+      partImagesDiv.style.display = "none";
+      labelsDiv.innerText = "Detection Stopped";
+      currentLabel = "";
+    }
+
+    function copyLabels() {
+      if (!currentLabel) {
+        alert("No label to copy!");
+        return;
+      }
+
+      navigator.clipboard.writeText(currentLabel)
+        .then(() => {
+          const copyBtn = document.querySelector('.copy-btn');
+          copyBtn.textContent = "Copied!";
+          setTimeout(() => {
+            copyBtn.textContent = "Copy Labels";
+          }, 2000);
+        })
+        .catch(err => {
+          console.error('Copy failed:', err.message, err.stack);
+          alert("Failed to copy label");
+        });
+    }
+
+    function showManual() {
+      try {
+        window.open("static/EEMC_MANUAL.pdf", "_blank");
+      } catch (err) {
+        console.error('Failed to open manual:', err.message, err.stack);
+        alert("Failed to open manual");
+      }
+    }
+
+    // Initialize on load
+    window.addEventListener('load', () => {
+      listCameras();
+
+      // Handle page visibility changes
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          stopDetection();
+        }
+      });
+
+      // Listen for device changes (e.g., new camera connected)
+      navigator.mediaDevices.addEventListener('devicechange', listCameras);
+    });
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+      stopDetection();
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    });
+  </script>
+</body>
+</html>
