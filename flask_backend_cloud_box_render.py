@@ -45,7 +45,7 @@ if os.name == 'nt': # Check if the operating system is Windows
 @app.route('/')
 def index():
     # Make sure 'index_cloud_box_render_camoffset_screenrotate_pdfmanual_pdfjs.html' exists in /templates/
-    return render_template('index_cloud_box_render_camoffset_screenrotate_pdfmanual_pdfjs.html')
+    return render_template('index_cloud_box_render_camoffset_screenrotate_pdfmanual.html')
 
 @app.route('/detect', methods=['POST'])
 def detect():
