@@ -6,3 +6,5 @@ Pillow
 flask-cors
 cryptography
 gunicorn
+gevent           
+gevent-websocket
