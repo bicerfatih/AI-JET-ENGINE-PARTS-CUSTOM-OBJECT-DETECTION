@@ -5,3 +5,4 @@ numpy
 Pillow
 flask-cors
 cryptography
+gunicorn
